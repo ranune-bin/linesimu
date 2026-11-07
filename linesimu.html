@@ -1,1 +1,235 @@
-<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>モンスト反射シミュレーター</title><style>body{margin:0;background:#111;color:#fff;font-family:sans-serif}#toolbar{padding:10px;background:#222}canvas{width:100%;max-width:900px;display:block;margin:auto;background:#000;touch-action:none}</style></head><body><div id="toolbar"><input type="file" id="imageInput" accept="image/*"><button id="clearBtn">リセット</button><span id="status">画像を選択してください</span></div><canvas id="canvas"></canvas><script>const canvas=document.getElementById('canvas');const ctx=canvas.getContext('2d');const status=document.getElementById('status');let backgroundImage=null,player=null,guidePoints=[],dragging=false;const REFLECTION_COUNT=20,BALL_RADIUS=20;function redraw(){ctx.clearRect(0,0,canvas.width,canvas.height);if(backgroundImage)ctx.drawImage(backgroundImage,0,0,canvas.width,canvas.height);if(player){ctx.fillStyle='red';ctx.beginPath();ctx.arc(player.x,player.y,BALL_RADIUS,0,Math.PI*2);ctx.fill()}if(guidePoints.length>1){ctx.strokeStyle='#00ffff';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(guidePoints[0].x,guidePoints[0].y);for(const p of guidePoints)ctx.lineTo(p.x,p.y);ctx.stroke();}}function getPosition(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}}document.getElementById('imageInput').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;const url=URL.createObjectURL(file);const img=new Image();img.onload=()=>{backgroundImage=img;canvas.width=img.width;canvas.height=img.height;status.textContent='画像サイズ '+img.width+' × '+img.height;redraw();URL.revokeObjectURL(url)};img.src=url;});canvas.addEventListener('click',e=>{if(dragging)return;player=getPosition(e);guidePoints=[];redraw();});canvas.addEventListener('pointerdown',()=>{if(player)dragging=true;});canvas.addEventListener('pointermove',e=>{if(!dragging)return;const p=getPosition(e);calculateGuide(player,p);});canvas.addEventListener('pointerup',()=>dragging=false);function calculateGuide(start,target){guidePoints=[];let x=start.x,y=start.y,dx=start.x-target.x,dy=start.y-target.y;const len=Math.hypot(dx,dy);if(len<1)return;dx/=len;dy/=len;guidePoints.push({x,y});const left=BALL_RADIUS,right=canvas.width-BALL_RADIUS,top=BALL_RADIUS,bottom=canvas.height-BALL_RADIUS;for(let i=0;i<REFLECTION_COUNT;i++){let tx=Infinity,ty=Infinity;if(dx>0)tx=(right-x)/dx;else if(dx<0)tx=(left-x)/dx;if(dy>0)ty=(bottom-y)/dy;else if(dy<0)ty=(top-y)/dy;const t=Math.min(tx,ty);x+=dx*t;y+=dy*t;guidePoints.push({x,y});if(tx<ty)dx=-dx;else dy=-dy;}redraw();}document.getElementById('clearBtn').addEventListener('click',()=>{player=null;guidePoints=[];redraw();});</script></body></html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>モンスト射線シミュレータ</title>
+
+<style>
+body{
+    margin:0;
+    background:#111;
+    color:white;
+    font-family:sans-serif;
+}
+
+#menu{
+    padding:10px;
+    background:#222;
+}
+
+canvas{
+    width:100%;
+    display:block;
+    background:black;
+    touch-action:none;
+}
+
+button,input{
+    margin:5px;
+}
+</style>
+</head>
+<body>
+
+<div id="menu">
+    <input type="file" id="imageInput" accept="image/*">
+    <button id="resetBtn">リセット</button>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let bg = null;
+
+let player = null;
+
+let dragging = false;
+
+let guide = [];
+
+function resizeCanvas(w,h){
+    canvas.width = w;
+    canvas.height = h;
+}
+
+function draw(){
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    if(bg){
+        ctx.drawImage(bg,0,0,canvas.width,canvas.height);
+    }
+
+    if(player){
+
+        ctx.fillStyle="red";
+
+        ctx.beginPath();
+        ctx.arc(player.x,player.y,20,0,Math.PI*2);
+        ctx.fill();
+    }
+
+    if(guide.length>1){
+
+        ctx.strokeStyle="cyan";
+        ctx.lineWidth=4;
+
+        ctx.beginPath();
+
+        ctx.moveTo(guide[0].x,guide[0].y);
+
+        for(let p of guide){
+            ctx.lineTo(p.x,p.y);
+        }
+
+        ctx.stroke();
+    }
+}
+
+document.getElementById("imageInput").addEventListener("change",e=>{
+
+    const file = e.target.files[0];
+
+    if(!file) return;
+
+    const url = URL.createObjectURL(file);
+
+    const img = new Image();
+
+    img.onload=()=>{
+
+        bg=img;
+
+        resizeCanvas(img.width,img.height);
+
+        draw();
+
+        URL.revokeObjectURL(url);
+
+        alert(
+          "画像サイズ: "
+          + img.width
+          + " × "
+          + img.height
+        );
+    };
+
+    img.src=url;
+});
+
+canvas.addEventListener("click",e=>{
+
+    if(dragging) return;
+
+    const rect=canvas.getBoundingClientRect();
+
+    player={
+        x:(e.clientX-rect.left)*canvas.width/rect.width,
+        y:(e.clientY-rect.top)*canvas.height/rect.height
+    };
+
+    draw();
+});
+
+canvas.addEventListener("pointerdown",e=>{
+
+    if(!player) return;
+
+    dragging=true;
+});
+
+canvas.addEventListener("pointermove",e=>{
+
+    if(!dragging) return;
+
+    const rect=canvas.getBoundingClientRect();
+
+    const mx=
+    (e.clientX-rect.left)*canvas.width/rect.width;
+
+    const my=
+    (e.clientY-rect.top)*canvas.height/rect.height;
+
+    calculateGuide(mx,my);
+});
+
+canvas.addEventListener("pointerup",()=>{
+
+    dragging=false;
+});
+
+function calculateGuide(mx,my){
+
+    guide=[];
+
+    let x=player.x;
+    let y=player.y;
+
+    let dx=x-mx;
+    let dy=y-my;
+
+    let len=Math.hypot(dx,dy);
+
+    if(len<1) return;
+
+    dx/=len;
+    dy/=len;
+
+    guide.push({x,y});
+
+    for(let i=0;i<20;i++){
+
+        let tx=Infinity;
+        let ty=Infinity;
+
+        if(dx>0){
+            tx=(canvas.width-x)/dx;
+        }
+
+        if(dx<0){
+            tx=(0-x)/dx;
+        }
+
+        if(dy>0){
+            ty=(canvas.height-y)/dy;
+        }
+
+        if(dy<0){
+            ty=(0-y)/dy;
+        }
+
+        const t=Math.min(tx,ty);
+
+        x+=dx*t;
+        y+=dy*t;
+
+        guide.push({x,y});
+
+        if(tx<ty){
+            dx=-dx;
+        }else{
+            dy=-dy;
+        }
+    }
+
+    draw();
+}
+
+document.getElementById("resetBtn")
+.addEventListener("click",()=>{
+
+    player=null;
+    guide=[];
+
+    draw();
+});
+
+</script>
+
+</body>
+</html>
