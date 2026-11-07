@@ -2,54 +2,306 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>モンスト反射シミュレーター</title>
-<link rel="stylesheet" href="style.css">
-</head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
+<title>モンストガイドシミュレータ</title>
+
+<style>
+body{
+    margin:0;
+    padding:10px;
+    font-family:sans-serif;
+}
+
+canvas{
+    width:100%;
+    max-width:500px;
+    border:1px solid #000;
+    touch-action:none;
+    display:block;
+    margin:auto;
+}
+
+.controls{
+    margin-top:10px;
+}
+
+input{
+    width:100%;
+}
+</style>
+</head>
 <body>
 
-<div class="header">
-    <input type="file" id="imageInput" accept="image/*">
+<input type="file" id="imageInput">
+
+<canvas id="canvas" width="400" height="700"></canvas>
+
+<div class="controls">
+角度
+<input
+type="range"
+id="angle"
+min="0"
+max="360"
+value="45">
+
+反射回数
+<input
+type="number"
+id="bounce"
+value="5">
 </div>
 
-<div id="controls">
+<script>
 
-    <button id="reselectBtn">
-        モンスター再選択
-    </button>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-    <div class="reflection-box">
+let bgImage = null;
 
-        <span>反射回数</span>
+const ball = {
+    x:200,
+    y:600,
+    r:20
+};
 
-        <button id="minusBtn">－</button>
+document
+.getElementById("imageInput")
+.addEventListener("change", e=>{
 
-        <span id="count">6</span>
+    const file = e.target.files[0];
 
-        <button id="plusBtn">＋</button>
+    if(!file) return;
 
-    </div>
+    const img = new Image();
 
-    <label>
-        <input
-            type="checkbox"
-            id="showWall"
-            checked>
-        壁を表示
-    </label>
+    img.onload=()=>{
 
-    <div id="angleText">
-        角度 0°
-    </div>
+        bgImage=img;
+        draw();
 
-</div>
+    };
 
-<div id="canvasArea">
-    <canvas id="canvas"></canvas>
-</div>
+    img.src=
+    URL.createObjectURL(file);
+});
 
-<script src="app.js"></script>
+function draw(){
+
+    ctx.clearRect(
+        0,0,
+        canvas.width,
+        canvas.height
+    );
+
+    if(bgImage){
+
+        ctx.drawImage(
+            bgImage,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+    }
+
+    drawGuide();
+
+    drawCircle();
+}
+
+function drawCircle(){
+
+    ctx.beginPath();
+
+    ctx.arc(
+        ball.x,
+        ball.y,
+        ball.r,
+        0,
+        Math.PI*2
+    );
+
+    ctx.strokeStyle="red";
+    ctx.lineWidth=3;
+
+    ctx.stroke();
+
+    ctx.beginPath();
+
+    ctx.moveTo(ball.x-15,ball.y);
+    ctx.lineTo(ball.x+15,ball.y);
+
+    ctx.moveTo(ball.x,ball.y-15);
+    ctx.lineTo(ball.x,ball.y+15);
+
+    ctx.stroke();
+}
+
+function drawGuide(){
+
+    const angle=
+    Number(
+        document.getElementById(
+            "angle"
+        ).value
+    );
+
+    const rad=
+    angle*Math.PI/180;
+
+    let x=ball.x;
+    let y=ball.y;
+
+    let dx=Math.cos(rad);
+    let dy=-Math.sin(rad);
+
+    const bounce=
+    Number(
+        document.getElementById(
+            "bounce"
+        ).value
+    );
+
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+
+    for(let i=0;i<bounce;i++){
+
+        let tx=
+        dx>0
+        ? (canvas.width-x)/dx
+        : (0-x)/dx;
+
+        let ty=
+        dy>0
+        ? (canvas.height-y)/dy
+        : (0-y)/dy;
+
+        let t=
+        Math.min(
+            Math.abs(tx),
+            Math.abs(ty)
+        );
+
+        x+=dx*t;
+        y+=dy*t;
+
+        ctx.lineTo(x,y);
+
+        if(
+        Math.abs(tx)
+        <
+        Math.abs(ty)
+        ){
+            dx*=-1;
+        }else{
+            dy*=-1;
+        }
+    }
+
+    ctx.strokeStyle="lime";
+    ctx.lineWidth=3;
+    ctx.stroke();
+}
+
+let dragging=false;
+
+canvas.addEventListener(
+"touchstart",
+e=>{
+
+    const rect=
+    canvas.getBoundingClientRect();
+
+    const t=e.touches[0];
+
+    const x=
+    (t.clientX-rect.left)
+    *
+    (
+    canvas.width/
+    rect.width
+    );
+
+    const y=
+    (t.clientY-rect.top)
+    *
+    (
+    canvas.height/
+    rect.height
+    );
+
+    const d=
+    Math.hypot(
+        x-ball.x,
+        y-ball.y
+    );
+
+    if(d<40){
+        dragging=true;
+    }
+}
+);
+
+canvas.addEventListener(
+"touchmove",
+e=>{
+
+    if(!dragging)return;
+
+    e.preventDefault();
+
+    const rect=
+    canvas.getBoundingClientRect();
+
+    const t=e.touches[0];
+
+    ball.x=
+    (t.clientX-rect.left)
+    *
+    (
+    canvas.width/
+    rect.width
+    );
+
+    ball.y=
+    (t.clientY-rect.top)
+    *
+    (
+    canvas.height/
+    rect.height
+    );
+
+    draw();
+}
+);
+
+canvas.addEventListener(
+"touchend",
+()=>{
+    dragging=false;
+}
+);
+
+document
+.getElementById("angle")
+.addEventListener(
+"input",
+draw
+);
+
+document
+.getElementById("bounce")
+.addEventListener(
+"input",
+draw
+);
+
+draw();
+
+</script>
 
 </body>
 </html>
