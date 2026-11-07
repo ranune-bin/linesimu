@@ -1,1 +1,55 @@
-<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Monster Shot Simulator</title><link rel="stylesheet" href="style.css"></head><body><div class="toolbar"><input type="file" id="imageInput" accept="image/*"><button id="reselectBtn">モンスター再選択</button><div class="counter"><button id="minusBtn">-</button><span id="count">6</span><button id="plusBtn">+</button></div><label><input type="checkbox" id="showWall" checked>壁を表示</label><div id="angle">角度 0°</div></div><canvas id="canvas"></canvas><script src="app.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>モンスト反射シミュレーター</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="header">
+    <input type="file" id="imageInput" accept="image/*">
+</div>
+
+<div id="controls">
+
+    <button id="reselectBtn">
+        モンスター再選択
+    </button>
+
+    <div class="reflection-box">
+
+        <span>反射回数</span>
+
+        <button id="minusBtn">－</button>
+
+        <span id="count">6</span>
+
+        <button id="plusBtn">＋</button>
+
+    </div>
+
+    <label>
+        <input
+            type="checkbox"
+            id="showWall"
+            checked>
+        壁を表示
+    </label>
+
+    <div id="angleText">
+        角度 0°
+    </div>
+
+</div>
+
+<div id="canvasArea">
+    <canvas id="canvas"></canvas>
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
