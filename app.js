@@ -1,1 +1,327 @@
-const c=document.getElementById("canvas"),x=c.getContext("2d");let img=null,p=null,g=[],drag=false,rc=6;const r=20;const count=document.getElementById("count");function draw(){x.clearRect(0,0,c.width,c.height);if(img)x.drawImage(img,0,0,c.width,c.height);if(document.getElementById("showWall").checked){x.strokeStyle="red";x.lineWidth=4;x.strokeRect(r,r,c.width-r*2,c.height-r*2);}if(p){x.fillStyle="yellow";x.beginPath();x.arc(p.x,p.y,r,0,Math.PI*2);x.fill()}if(g.length>1){x.strokeStyle='white';x.lineWidth=3;x.beginPath();x.moveTo(g[0].x,g[0].y);g.forEach(v=>x.lineTo(v.x,v.y));x.stroke();g.forEach((v,i)=>{if(i===0)return;x.fillStyle='black';x.beginPath();x.arc(v.x,v.y,14,0,Math.PI*2);x.fill();x.fillStyle='white';x.fillText(i,v.x-3,v.y+4);});}}function pos(e){const b=c.getBoundingClientRect();return{x:(e.clientX-b.left)*c.width/b.width,y:(e.clientY-b.top)*c.height/b.height}}document.getElementById('imageInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const u=URL.createObjectURL(f);const i=new Image();i.onload=()=>{img=i;c.width=i.width;c.height=i.height;draw()};i.src=u};c.onclick=e=>{if(!drag)p=pos(e),draw()};c.onpointerdown=()=>{if(p)drag=true};c.onpointerup=()=>drag=false;c.onpointermove=e=>{if(!drag||!p)return;const t=pos(e);let dx=p.x-t.x,dy=p.y-t.y,l=Math.hypot(dx,dy);if(l<1)return;dx/=l;dy/=l;g=[{x:p.x,y:p.y}];let px=p.x,py=p.y;const ang=(Math.atan2(dx,-dy)*180/Math.PI+360)%360;document.getElementById('angle').textContent='角度 '+ang.toFixed(1)+'°';for(let i=0;i<rc;i++){let tx=1e9,ty=1e9;if(dx>0)tx=(c.width-r-px)/dx;else if(dx<0)tx=(r-px)/dx;if(dy>0)ty=(c.height-r-py)/dy;else if(dy<0)ty=(r-py)/dy;const t2=Math.min(tx,ty);px+=dx*t2;py+=dy*t2;g.push({x:px,y:py});if(tx<ty)dx=-dx;else dy=-dy;}draw()};minusBtn.onclick=()=>{if(rc>1)rc--;count.textContent=rc};plusBtn.onclick=()=>{rc++;count.textContent=rc};reselectBtn.onclick=()=>{p=null;g=[];draw()};showWall.onchange=draw;
+const canvas =
+document.getElementById("canvas");
+
+const ctx =
+canvas.getContext("2d");
+
+let bg = null;
+
+let player = null;
+
+let guide = [];
+
+let dragging = false;
+
+let reflectionCount = 6;
+
+const BALL_RADIUS = 25;
+
+function draw() {
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    if(bg){
+
+        ctx.drawImage(
+            bg,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+    }
+
+    if(
+        document.getElementById(
+            "showWall"
+        ).checked
+    ){
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 3;
+
+        ctx.strokeRect(
+            BALL_RADIUS,
+            BALL_RADIUS,
+            canvas.width - BALL_RADIUS * 2,
+            canvas.height - BALL_RADIUS * 2
+        );
+    }
+
+    if(player){
+
+        ctx.strokeStyle = "#ff0000";
+        ctx.lineWidth = 5;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            player.x,
+            player.y,
+            35,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.stroke();
+    }
+
+    if(guide.length > 1){
+
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 4;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            guide[0].x,
+            guide[0].y
+        );
+
+        guide.forEach(p=>{
+            ctx.lineTo(p.x,p.y);
+        });
+
+        ctx.stroke();
+
+        guide.forEach((p,index)=>{
+
+            if(index===0)return;
+
+            ctx.fillStyle =
+            "black";
+
+            ctx.beginPath();
+
+            ctx.arc(
+                p.x,
+                p.y,
+                12,
+                0,
+                Math.PI*2
+            );
+
+            ctx.fill();
+
+            ctx.fillStyle =
+            "white";
+
+            ctx.fillText(
+                index,
+                p.x-3,
+                p.y+4
+            );
+        });
+    }
+}
+
+function getPos(e){
+
+    const rect =
+    canvas.getBoundingClientRect();
+
+    return {
+
+        x:
+        (e.clientX-rect.left)
+        * canvas.width
+        / rect.width,
+
+        y:
+        (e.clientY-rect.top)
+        * canvas.height
+        / rect.height
+    };
+}
+
+imageInput.addEventListener(
+"change",
+e=>{
+
+    const file =
+    e.target.files[0];
+
+    if(!file) return;
+
+    const img =
+    new Image();
+
+    img.onload=()=>{
+
+        bg = img;
+
+        canvas.width =
+        img.width;
+
+        canvas.height =
+        img.height;
+
+        controls.style.display =
+        "block";
+
+        draw();
+    };
+
+    img.src =
+    URL.createObjectURL(file);
+});
+
+canvas.addEventListener(
+"click",
+e=>{
+
+    if(dragging) return;
+
+    player =
+    getPos(e);
+
+    draw();
+});
+
+canvas.addEventListener(
+"pointerdown",
+()=>{
+
+    if(player){
+        dragging = true;
+    }
+});
+
+canvas.addEventListener(
+"pointerup",
+()=>{
+    dragging = false;
+});
+
+canvas.addEventListener(
+"pointermove",
+e=>{
+
+    if(
+        !dragging ||
+        !player
+    ) return;
+
+    updateGuide(
+        getPos(e)
+    );
+});
+
+function updateGuide(target){
+
+    guide = [];
+
+    let x = player.x;
+    let y = player.y;
+
+    let dx =
+    player.x - target.x;
+
+    let dy =
+    player.y - target.y;
+
+    const len =
+    Math.hypot(dx,dy);
+
+    if(len < 1) return;
+
+    dx /= len;
+    dy /= len;
+
+    const angle =
+    (
+        Math.atan2(dx,-dy)
+        *180
+        /Math.PI
+        +360
+    )%360;
+
+    angleText.textContent =
+    `角度 ${angle.toFixed(1)}°`;
+
+    guide.push({x,y});
+
+    for(
+        let i=0;
+        i<reflectionCount;
+        i++
+    ){
+
+        let tx=Infinity;
+        let ty=Infinity;
+
+        if(dx>0)
+            tx=
+            (canvas.width
+            -BALL_RADIUS
+            -x)/dx;
+
+        if(dx<0)
+            tx=
+            (BALL_RADIUS
+            -x)/dx;
+
+        if(dy>0)
+            ty=
+            (canvas.height
+            -BALL_RADIUS
+            -y)/dy;
+
+        if(dy<0)
+            ty=
+            (BALL_RADIUS
+            -y)/dy;
+
+        const t =
+        Math.min(tx,ty);
+
+        x+=dx*t;
+        y+=dy*t;
+
+        guide.push({
+            x,y
+        });
+
+        if(tx<ty){
+            dx=-dx;
+        }else{
+            dy=-dy;
+        }
+    }
+
+    draw();
+}
+
+minusBtn.onclick=()=>{
+
+    if(reflectionCount>1){
+
+        reflectionCount--;
+
+        count.textContent =
+        reflectionCount;
+    }
+};
+
+plusBtn.onclick=()=>{
+
+    reflectionCount++;
+
+    count.textContent =
+    reflectionCount;
+};
+
+reselectBtn.onclick=()=>{
+
+    player = null;
+    guide = [];
+
+    draw();
+};
+
+showWall.onchange =
+draw;
