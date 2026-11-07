@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>モンストガイドシミュレーター</title>
 
@@ -17,15 +17,16 @@ body{
 .controls{
     position:sticky;
     top:0;
+    z-index:1000;
     background:white;
     padding:10px;
-    z-index:1000;
+    border-radius:8px;
     box-shadow:0 2px 5px rgba(0,0,0,.15);
 }
 
 button{
-    padding:10px;
-    margin-top:5px;
+    padding:8px 12px;
+    margin-top:8px;
 }
 
 #viewer{
@@ -45,8 +46,8 @@ button{
     left:0;
 }
 
-.info{
-    margin-top:8px;
+.row{
+    margin-top:10px;
 }
 </style>
 </head>
@@ -57,13 +58,13 @@ button{
 
 <input type="file" id="imageInput">
 
-<br><br>
-
+<div class="row">
 <button id="moveBtn">
 〇移動モード OFF
 </button>
+</div>
 
-<div class="info">
+<div class="row">
 反射回数
 <input type="number"
        id="bounce"
@@ -83,6 +84,40 @@ button{
 </div>
 
 <script>
+
+/* =====================
+   調整用設定
+===================== */
+
+const CONFIG = {
+
+    field:{
+        left:18,
+        rightMargin:18,
+        top:205,
+        bottomMargin:235
+    },
+
+    ball:{
+        radius:28,
+        strokeWidth:4
+    },
+
+    guide:{
+        color:"#00ff00",
+        width:4
+    },
+
+    border:{
+        color:"rgba(0,0,0,0.25)",
+        width:1
+    }
+
+};
+
+/* =====================
+   初期化
+===================== */
 
 const img =
 document.getElementById("stageImage");
@@ -109,9 +144,12 @@ let aimY=0;
 
 const ball={
     x:300,
-    y:500,
-    radius:35
+    y:500
 };
+
+/* =====================
+   ボタン
+===================== */
 
 moveBtn.onclick=()=>{
 
@@ -124,40 +162,47 @@ moveBtn.onclick=()=>{
 
 };
 
+/* =====================
+   画像読込
+===================== */
+
 document
 .getElementById("imageInput")
 .addEventListener(
 "change",
 e=>{
 
-    const file=
-    e.target.files[0];
+    const file=e.target.files[0];
 
     if(!file) return;
 
     img.onload=()=>{
 
-        canvas.width=
+        canvas.width =
         img.clientWidth;
 
-        canvas.height=
+        canvas.height =
         img.clientHeight;
 
-        ball.x=
+        ball.x =
         canvas.width/2;
 
-        ball.y=
+        ball.y =
         canvas.height*0.8;
 
         draw();
 
     };
 
-    img.src=
+    img.src =
     URL.createObjectURL(file);
 
 }
 );
+
+/* =====================
+   描画
+===================== */
 
 function draw(){
 
@@ -168,28 +213,51 @@ function draw(){
         canvas.height
     );
 
+    drawFieldBorder();
+
     if(aiming){
 
         drawTrajectory();
+        drawPullLine();
 
-        ctx.beginPath();
-
-        ctx.moveTo(
-            ball.x,
-            ball.y
-        );
-
-        ctx.lineTo(
-            aimX,
-            aimY
-        );
-
-        ctx.strokeStyle="red";
-        ctx.lineWidth=3;
-        ctx.stroke();
     }
 
     drawBall();
+
+}
+
+function drawFieldBorder(){
+
+    const left=
+    CONFIG.field.left;
+
+    const right=
+    canvas.width-
+    CONFIG.field.rightMargin;
+
+    const top=
+    CONFIG.field.top;
+
+    const bottom=
+    canvas.height-
+    CONFIG.field.bottomMargin;
+
+    ctx.beginPath();
+
+    ctx.rect(
+        left,
+        top,
+        right-left,
+        bottom-top
+    );
+
+    ctx.strokeStyle=
+    CONFIG.border.color;
+
+    ctx.lineWidth=
+    CONFIG.border.width;
+
+    ctx.stroke();
 }
 
 function drawBall(){
@@ -199,58 +267,72 @@ function drawBall(){
     ctx.arc(
         ball.x,
         ball.y,
-        ball.radius,
+        CONFIG.ball.radius,
         0,
         Math.PI*2
     );
 
     ctx.strokeStyle="red";
-    ctx.lineWidth=4;
+
+    ctx.lineWidth=
+    CONFIG.ball.strokeWidth;
+
     ctx.stroke();
+}
+
+function drawPullLine(){
 
     ctx.beginPath();
 
     ctx.moveTo(
-        ball.x-20,
+        ball.x,
         ball.y
     );
 
     ctx.lineTo(
-        ball.x+20,
-        ball.y
+        aimX,
+        aimY
     );
 
-    ctx.moveTo(
-        ball.x,
-        ball.y-20
-    );
-
-    ctx.lineTo(
-        ball.x,
-        ball.y+20
-    );
-
+    ctx.strokeStyle="red";
+    ctx.lineWidth=2;
     ctx.stroke();
 }
 
 function drawTrajectory(){
 
-    const bounce=
+    const bounce =
     Number(
         bounceInput.value
     );
 
-    let angle=
+    const left=
+    CONFIG.field.left;
+
+    const right=
+    canvas.width-
+    CONFIG.field.rightMargin;
+
+    const top=
+    CONFIG.field.top;
+
+    const bottom=
+    canvas.height-
+    CONFIG.field.bottomMargin;
+
+    /* 引っ張った方向の反対へ飛ぶ */
+
+    const angle =
     Math.atan2(
         ball.y-aimY,
-        aimX-ball.x
+        ball.x-aimX
     );
 
-    let dx=
+    let dx =
     Math.cos(angle);
 
-    let dy=
-    -Math.sin(angle);
+    let dy =
+    Math.sin(angle);
 
     let x=ball.x;
     let y=ball.y;
@@ -264,57 +346,66 @@ function drawTrajectory(){
         i++
     ){
 
-        let tx=
-        dx>0
+        let tx =
+        dx > 0
         ?
-        (canvas.width-x)/dx
+        (right-x)/dx
         :
-        (0-x)/dx;
+        (left-x)/dx;
 
-        let ty=
-        dy>0
+        let ty =
+        dy > 0
         ?
-        (canvas.height-y)/dy
+        (bottom-y)/dy
         :
-        (0-y)/dy;
+        (top-y)/dy;
 
-        let t=
+        let t =
         Math.min(
             Math.abs(tx),
             Math.abs(ty)
         );
 
-        x+=dx*t;
-        y+=dy*t;
+        x += dx*t;
+        y += dy*t;
 
-        ctx.lineTo(x,y);
+        ctx.lineTo(
+            x,
+            y
+        );
 
         if(
             Math.abs(tx)
             <
             Math.abs(ty)
         ){
-            dx*=-1;
+            dx *= -1;
         }
         else{
-            dy*=-1;
+            dy *= -1;
         }
+
     }
 
     ctx.strokeStyle=
-    "#00ff00";
+    CONFIG.guide.color;
 
-    ctx.lineWidth=4;
+    ctx.lineWidth=
+    CONFIG.guide.width;
 
     ctx.stroke();
 }
 
+/* =====================
+   タッチ操作
+===================== */
+
 function getPos(e){
 
-    const rect=
+    const rect =
     canvas.getBoundingClientRect();
 
-    const touch=
+    const touch =
     e.touches[0];
 
     return{
@@ -328,16 +419,17 @@ function getPos(e){
         -rect.top
 
     };
+
 }
 
 canvas.addEventListener(
 "touchstart",
 e=>{
 
-    const p=
+    const p =
     getPos(e);
 
-    const d=
+    const d =
     Math.hypot(
         p.x-ball.x,
         p.y-ball.y
@@ -345,11 +437,14 @@ e=>{
 
     if(moveMode){
 
-        if(d<60){
+        if(
+            d <
+            CONFIG.ball.radius + 25
+        ){
 
             draggingBall=true;
-
             e.preventDefault();
+
         }
 
         return;
@@ -370,14 +465,13 @@ canvas.addEventListener(
 "touchmove",
 e=>{
 
-    const p=
+    const p =
     getPos(e);
 
     if(moveMode){
 
-        if(!draggingBall){
+        if(!draggingBall)
             return;
-        }
 
         ball.x=p.x;
         ball.y=p.y;
@@ -385,13 +479,11 @@ e=>{
         draw();
 
         e.preventDefault();
-
         return;
     }
 
-    if(!aiming){
+    if(!aiming)
         return;
-    }
 
     aimX=p.x;
     aimY=p.y;
@@ -410,8 +502,7 @@ canvas.addEventListener(
 
     draggingBall=false;
 
-}
-);
+});
 
 bounceInput.addEventListener(
 "input",
@@ -422,12 +513,13 @@ window.addEventListener(
 "resize",
 ()=>{
 
-    if(!img.src) return;
+    if(!img.src)
+        return;
 
-    canvas.width=
+    canvas.width =
     img.clientWidth;
 
-    canvas.height=
+    canvas.height =
     img.clientHeight;
 
     draw();
