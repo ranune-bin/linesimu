@@ -1,1 +1,42 @@
-body{margin:0;background:#10131d;color:#fff;font-family:sans-serif}.toolbar{padding:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}.counter{display:flex}.counter button,#count{padding:8px 14px;background:#1d2230;border:1px solid #444;color:#fff}#count{min-width:30px;text-align:center}canvas{display:block;width:100%;max-width:900px;margin:auto;background:#000;touch-action:none}
+body{
+    margin:0;
+    background:#10131d;
+    color:white;
+    font-family:sans-serif;
+}
+
+.header{
+    padding:10px;
+    background:#1c2230;
+}
+
+#controls{
+    display:none;
+    padding:10px;
+    background:#171d2a;
+}
+
+.reflection-box{
+    margin-top:10px;
+    margin-bottom:10px;
+}
+
+button{
+    padding:8px 12px;
+}
+
+#count{
+    margin:0 10px;
+    font-size:20px;
+}
+
+#canvasArea{
+    text-align:center;
+}
+
+canvas{
+    width:100%;
+    max-width:900px;
+    background:black;
+    touch-action:none;
+}
