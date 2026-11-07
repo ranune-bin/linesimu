@@ -7,7 +7,6 @@
 <title>モンストガイドシミュレーター</title>
 
 <style>
-
 body{
     margin:0;
     padding:10px;
@@ -21,11 +20,12 @@ body{
     background:white;
     padding:10px;
     z-index:1000;
-    box-shadow:0 2px 5px rgba(0,0,0,.2);
+    box-shadow:0 2px 5px rgba(0,0,0,.15);
 }
 
-input[type=file]{
-    width:100%;
+button{
+    padding:10px;
+    margin-top:5px;
 }
 
 #viewer{
@@ -45,39 +45,31 @@ input[type=file]{
     left:0;
 }
 
-.row{
-    margin-top:10px;
+.info{
+    margin-top:8px;
 }
-
-button{
-    padding:8px;
-}
-
 </style>
 </head>
+
 <body>
 
 <div class="controls">
 
 <input type="file" id="imageInput">
 
-<div class="row">
-角度:
-<span id="angleText">45</span>°
-<input type="range"
-       id="angle"
-       min="0"
-       max="360"
-       value="45">
-</div>
+<br><br>
 
-<div class="row">
-反射回数:
+<button id="moveBtn">
+〇移動モード OFF
+</button>
+
+<div class="info">
+反射回数
 <input type="number"
        id="bounce"
        value="5"
        min="1"
-       max="30">
+       max="50">
 </div>
 
 </div>
@@ -92,30 +84,80 @@ button{
 
 <script>
 
-const imageInput = document.getElementById("imageInput");
-const img = document.getElementById("stageImage");
-const canvas = document.getElementById("guideCanvas");
-const ctx = canvas.getContext("2d");
+const img =
+document.getElementById("stageImage");
 
-const angleSlider = document.getElementById("angle");
-const bounceInput = document.getElementById("bounce");
-const angleText = document.getElementById("angleText");
+const canvas =
+document.getElementById("guideCanvas");
 
-let dragging = false;
+const ctx =
+canvas.getContext("2d");
 
-const ball = {
+const bounceInput =
+document.getElementById("bounce");
+
+const moveBtn =
+document.getElementById("moveBtn");
+
+let moveMode=false;
+let draggingBall=false;
+
+let aiming=false;
+
+let aimX=0;
+let aimY=0;
+
+const ball={
     x:300,
     y:500,
     radius:35
 };
 
-function resizeCanvas(){
+moveBtn.onclick=()=>{
 
-    canvas.width = img.clientWidth;
-    canvas.height = img.clientHeight;
+    moveMode=!moveMode;
 
-    draw();
+    moveBtn.textContent=
+    moveMode
+    ? "〇移動モード ON"
+    : "〇移動モード OFF";
+
+};
+
+document
+.getElementById("imageInput")
+.addEventListener(
+"change",
+e=>{
+
+    const file=
+    e.target.files[0];
+
+    if(!file) return;
+
+    img.onload=()=>{
+
+        canvas.width=
+        img.clientWidth;
+
+        canvas.height=
+        img.clientHeight;
+
+        ball.x=
+        canvas.width/2;
+
+        ball.y=
+        canvas.height*0.8;
+
+        draw();
+
+    };
+
+    img.src=
+    URL.createObjectURL(file);
+
 }
+);
 
 function draw(){
 
@@ -126,7 +168,27 @@ function draw(){
         canvas.height
     );
 
-    drawGuide();
+    if(aiming){
+
+        drawTrajectory();
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            ball.x,
+            ball.y
+        );
+
+        ctx.lineTo(
+            aimX,
+            aimY
+        );
+
+        ctx.strokeStyle="red";
+        ctx.lineWidth=3;
+        ctx.stroke();
+    }
+
     drawBall();
 }
 
@@ -148,134 +210,123 @@ function drawBall(){
 
     ctx.beginPath();
 
-    ctx.moveTo(ball.x-20, ball.y);
-    ctx.lineTo(ball.x+20, ball.y);
+    ctx.moveTo(
+        ball.x-20,
+        ball.y
+    );
 
-    ctx.moveTo(ball.x, ball.y-20);
-    ctx.lineTo(ball.x, ball.y+20);
+    ctx.lineTo(
+        ball.x+20,
+        ball.y
+    );
+
+    ctx.moveTo(
+        ball.x,
+        ball.y-20
+    );
+
+    ctx.lineTo(
+        ball.x,
+        ball.y+20
+    );
 
     ctx.stroke();
 }
 
-function drawGuide(){
+function drawTrajectory(){
 
-    const angle =
-        Number(angleSlider.value);
+    const bounce=
+    Number(
+        bounceInput.value
+    );
 
-    const bounce =
-        Number(bounceInput.value);
+    let angle=
+    Math.atan2(
+        ball.y-aimY,
+        aimX-ball.x
+    );
 
-    let rad =
-        angle * Math.PI / 180;
+    let dx=
+    Math.cos(angle);
 
-    let x = ball.x;
-    let y = ball.y;
+    let dy=
+    -Math.sin(angle);
 
-    let dx = Math.cos(rad);
-    let dy = -Math.sin(rad);
+    let x=ball.x;
+    let y=ball.y;
 
     ctx.beginPath();
     ctx.moveTo(x,y);
 
-    for(let i=0;i<bounce;i++){
+    for(
+        let i=0;
+        i<bounce;
+        i++
+    ){
 
-        let tx =
-            dx>0
-            ? (canvas.width-x)/dx
-            : (0-x)/dx;
+        let tx=
+        dx>0
+        ?
+        (canvas.width-x)/dx
+        :
+        (0-x)/dx;
 
-        let ty =
-            dy>0
-            ? (canvas.height-y)/dy
-            : (0-y)/dy;
+        let ty=
+        dy>0
+        ?
+        (canvas.height-y)/dy
+        :
+        (0-y)/dy;
 
-        let t =
-            Math.min(
-                Math.abs(tx),
-                Math.abs(ty)
-            );
+        let t=
+        Math.min(
+            Math.abs(tx),
+            Math.abs(ty)
+        );
 
-        x += dx*t;
-        y += dy*t;
+        x+=dx*t;
+        y+=dy*t;
 
         ctx.lineTo(x,y);
 
-        ctx.fillStyle="yellow";
-        ctx.beginPath();
-        ctx.arc(x,y,8,0,Math.PI*2);
-        ctx.fill();
-
-        if(Math.abs(tx)<Math.abs(ty)){
+        if(
+            Math.abs(tx)
+            <
+            Math.abs(ty)
+        ){
             dx*=-1;
-        }else{
+        }
+        else{
             dy*=-1;
         }
     }
 
-    ctx.strokeStyle="#00ff33";
-    ctx.lineWidth=5;
+    ctx.strokeStyle=
+    "#00ff00";
+
+    ctx.lineWidth=4;
+
     ctx.stroke();
 }
 
-imageInput.addEventListener(
-"change",
-e=>{
+function getPos(e){
 
-    const file = e.target.files[0];
+    const rect=
+    canvas.getBoundingClientRect();
 
-    if(!file) return;
+    const touch=
+    e.touches[0];
 
-    img.onload = ()=>{
-
-        resizeCanvas();
-
-        ball.x =
-            canvas.width/2;
-
-        ball.y =
-            canvas.height*0.8;
-
-        draw();
-    };
-
-    img.src =
-        URL.createObjectURL(file);
-}
-);
-
-angleSlider.addEventListener(
-"input",
-()=>{
-
-    angleText.textContent =
-        angleSlider.value;
-
-    draw();
-}
-);
-
-bounceInput.addEventListener(
-"input",
-draw
-);
-
-function getTouchPos(e){
-
-    const rect =
-        canvas.getBoundingClientRect();
-
-    const touch =
-        e.touches[0];
-
-    return {
+    return{
 
         x:
         touch.clientX
-        - rect.left,
+        -rect.left,
 
         y:
         touch.clientY
-        - rect.top
+        -rect.top
+
     };
 }
 
@@ -283,21 +334,34 @@ canvas.addEventListener(
 "touchstart",
 e=>{
 
-    const p =
-        getTouchPos(e);
+    const p=
+    getPos(e);
 
-    const d =
-        Math.hypot(
-            p.x-ball.x,
-            p.y-ball.y
-        );
+    const d=
+    Math.hypot(
+        p.x-ball.x,
+        p.y-ball.y
+    );
 
-    if(d<60){
+    if(moveMode){
 
-        dragging=true;
+        if(d<60){
 
-        e.preventDefault();
+            draggingBall=true;
+
+            e.preventDefault();
+        }
+
+        return;
     }
+
+    aiming=true;
+
+    aimX=p.x;
+    aimY=p.y;
+
+    draw();
+
 },
 {passive:false}
 );
@@ -306,17 +370,36 @@ canvas.addEventListener(
 "touchmove",
 e=>{
 
-    if(!dragging) return;
+    const p=
+    getPos(e);
 
-    const p =
-        getTouchPos(e);
+    if(moveMode){
 
-    ball.x = p.x;
-    ball.y = p.y;
+        if(!draggingBall){
+            return;
+        }
+
+        ball.x=p.x;
+        ball.y=p.y;
+
+        draw();
+
+        e.preventDefault();
+
+        return;
+    }
+
+    if(!aiming){
+        return;
+    }
+
+    aimX=p.x;
+    aimY=p.y;
 
     draw();
 
     e.preventDefault();
+
 },
 {passive:false}
 );
@@ -325,14 +408,31 @@ canvas.addEventListener(
 "touchend",
 ()=>{
 
-    dragging=false;
+    draggingBall=false;
 
 }
 );
 
+bounceInput.addEventListener(
+"input",
+draw
+);
+
 window.addEventListener(
 "resize",
-resizeCanvas
+()=>{
+
+    if(!img.src) return;
+
+    canvas.width=
+    img.clientWidth;
+
+    canvas.height=
+    img.clientHeight;
+
+    draw();
+
+}
 );
 
 </script>
